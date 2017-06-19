@@ -1,5 +1,5 @@
 -module(tut).
--export([double/1, fac/1, mult/2, convert/2, convert_length/1, list_length/1, format_temps/1, list_max/1, reverse/1]).
+-export([double/1, fac/1, mult/2, convert/2, convert_length/1, list_length/1, format_temps/1, list_max/1, reverse/1, convert_list_to_c/1]).
 
 double(X) ->
   2 * X.
@@ -28,19 +28,25 @@ list_length([]) ->
 list_length([_ | Rest]) ->
   1 + list_length(Rest).
 
-format_temps([]) ->
-  ok;
-format_temps([City | Rest]) ->
-  print_temp(convert_to_celcius(City)),
-  format_temps(Rest).
+format_temps(List_To_Convert) ->
+  Converted_List = convert_list_to_c(List_To_Convert),
+  print_temp(Converted_List).
+
+convert_list_to_c([Head | Rest]) ->
+  [convert_to_celcius(Head) | convert_list_to_c(Rest)];
+convert_list_to_c([]) ->
+  [].
 
 convert_to_celcius({Name, {c, Temp}}) -> % No conversion necessary
   {Name, {c, Temp}};
 convert_to_celcius({Name, {f, Temp}}) -> % Do the conversion
   {Name, {c, (Temp - 32) * 5 / 9}}.
 
-print_temp({Name, {c, Temp}}) ->
-  io:format("~-15w ~w c~n", [Name, Temp]).
+print_temp([{Name, {c, Temp}} | Rest]) ->
+  io:format("~-12w ~w c~n", [Name, Temp]),
+  print_temp(Rest);
+print_temp([]) ->
+  ok.
 
 list_max([Head|Rest]) ->
   list_max(Rest, Head).
