@@ -1,5 +1,5 @@
 -module(tut).
--export([double/1, fac/1, mult/2, convert/2, convert_length/1, list_length/1, format_temps/1]).
+-export([double/1, fac/1, mult/2, convert/2, convert_length/1, list_length/1, format_temps/1, list_max/1, reverse/1]).
 
 double(X) ->
   2 * X.
@@ -41,3 +41,21 @@ convert_to_celcius({Name, {f, Temp}}) -> % Do the conversion
 
 print_temp({Name, {c, Temp}}) ->
   io:format("~-15w ~w c~n", [Name, Temp]).
+
+list_max([Head|Rest]) ->
+  list_max(Rest, Head).
+
+list_max([], Res) ->
+  Res;
+list_max([Head|Rest], Result_so_far) when Head > Result_so_far ->
+  list_max(Rest, Head);
+list_max([_|Rest], Result_so_far) ->
+  list_max(Rest, Result_so_far).
+
+reverse(List) ->
+  reverse(List, []).
+
+reverse([Head | Rest], Reversed_List) ->
+  reverse(Rest, [Head | Reversed_List]);
+reverse([], Reversed_List) ->
+  Reversed_List.
