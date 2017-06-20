@@ -1,17 +1,17 @@
 -module(conc).
 
--export([start/0, say_something/2, ping/2, pong/0]).
+-export([start/0, say_something/2, ping/1, pong/0]).
 
-ping(0, Pong_PID) ->
-  Pong_PID ! finished,
+ping(0) ->
+  pong ! finished,
   io:format("ping finished~n", []);
-ping(N, Pong_PID) ->
-  Pong_PID ! {ping, self()},
+ping(N) ->
+  pong ! {ping, self()},
   receive
     pong ->
       io:format("Ping received pong~n", [])
   end,
-  ping(N - 1, Pong_PID).
+  ping(N - 1).
 
 pong() ->
   receive
@@ -30,5 +30,5 @@ say_something(What, Times) ->
   say_something(What, Times - 1).
 
 start() ->
-  Pong_PID = spawn(conc, pong, []),
-  spawn(conc, ping, [3, Pong_PID]).
+  register(pong, spawn(conc, pong, [])),
+  spawn(conc, ping, [3]).
