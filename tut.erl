@@ -64,10 +64,10 @@ format_temps(List_To_Convert) ->
   {Max_City, Min_City} = find_max_and_min(Converted_List),
   print_max_and_min(Max_City, Min_City).
 
-convert_list_to_c([Head | Rest]) ->
-  [convert_to_celcius(Head) | convert_list_to_c(Rest)];
-convert_list_to_c([]) ->
-  [].
+convert_list_to_c(List) ->
+  New_List = lists:map(fun convert_to_celcius/1, List),
+  lists:sort(fun({_, {c, Temp1}}, {_, {c, Temp2}}) ->
+                 Temp1 < Temp2 end, New_List).
 
 convert_to_celcius({Name, {c, Temp}}) -> % No conversion necessary
   {Name, {c, Temp}};
