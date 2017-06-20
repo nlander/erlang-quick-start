@@ -1,5 +1,5 @@
 -module(tut).
--export([double/1, fac/1, mult/2, convert/2, convert_length/1, list_length/1, format_temps/1, list_max/1, reverse/1, convert_list_to_c/1, test_if/2]).
+-export([double/1, fac/1, mult/2, convert/2, convert_length/1, list_length/1, format_temps/1, list_max/1, reverse/1, convert_list_to_c/1, test_if/2, month_length/2]).
 
 double(X) ->
   2 * X.
@@ -18,10 +18,40 @@ convert(M, inch) ->
 convert(N, centimeter) ->
   N * 2.54.
 
-convert_length({centimeter, X}) ->
-  {inch, X / 2.54};
-convert_length({inch, Y}) ->
-  {centimeter, Y * 2.54}.
+convert_length(Length) ->
+  case Length of
+    {centimeter, X} ->
+      {inch, X / 2.54};
+    {inch, Y} ->
+      {centimeter, Y * 2.54}
+  end.
+
+month_length(Year, Month) ->
+  Leap = if
+    trunc(Year / 400) * 400 == Year ->
+      leap;
+    trunc(Year / 100) * 100 == Year ->
+      not_leap;
+    trunc(Year / 4) * 4 == Year ->
+      leap;
+    true ->
+      not_leap
+  end,
+  case Month of
+    sep -> 30;
+    apr -> 30;
+    jun -> 30;
+    nov -> 30;
+    feb when Leap == leap -> 29;
+    feb -> 28;
+    jan -> 31;
+    mar -> 31;
+    may -> 31;
+    jul -> 31;
+    aug -> 31;
+    oct -> 31;
+    dec -> 31
+  end.
 
 list_length([]) ->
   0;
