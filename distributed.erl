@@ -1,6 +1,6 @@
 -module(distributed).
 
--export([start_ping/1, start_pong/0, ping/2, pong/0]).
+-export([start/1, ping/2, pong/0]).
 
 ping(0, Pong_Node) ->
   {pong, Pong_Node} ! finished,
@@ -24,8 +24,6 @@ pong() ->
       pong()
   end.
 
-start_pong() ->
-  register(pong, spawn(distributed, pong, [])).
-
-start_ping(Pong_Node) ->
-  spawn(distributed, ping, [3, Pong_Node]).
+start(Ping_Node) ->
+  register(pong, spawn(distributed, pong, [])),
+  spawn(Ping_Node, distributed, ping, [3, node()]).
