@@ -18,11 +18,17 @@ ping1(N, Pong_PID) ->
   ping1(N - 1, Pong_PID).
 
 pong() ->
+  process_flag(trap_exit, true),
+  pong1().
+
+pong1() ->
   receive
     {ping, Ping_PID} ->
       io:format("Pong received ping~n", []),
       Ping_PID ! pong,
-      pong()
+      pong1();
+    {'EXIT', From, Reason} ->
+      io:format("pong exiting, got ~p~n", [{'EXIT', From, Reason}])
   end.
 
 start(Ping_Node) ->
