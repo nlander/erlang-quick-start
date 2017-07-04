@@ -25,11 +25,8 @@
 %%% Reply {messenger, stop, user_exists_at_other_node} stops the client
 %%% Reply {messenger, logged_on} logon was successful
 %%%
-%%% To server: {ClientPid, logoff}
-%%% Reply: {messenger, logged_off}
-%%%
-%%% To server: {ClientPid, logoff}
-%%% Reply: no reply
+%%% When the client terminates for some reason
+%%% To server: {'EXIT', ClientPid, Reason}
 %%%
 %%% To server: {ClientPid, message_to, ToName, Message} send a message
 %%% Reply: {messenger, stop, you_are_not_logged_on} stops the client
@@ -49,7 +46,8 @@
 %%% name of the node where the messenger server runs
 
 -module(messenger).
--export([start_server/0, server/1, logon/1, logoff/0, message/2, client/2]).
+-export([start_server/0, server/0,
+         logon/1, logoff/0, message/2, client/2]).
 
 %%% Change the function below to return the name of the node where the
 %%% messenger server runs
@@ -58,12 +56,16 @@ server_node() ->
 
 %%% This is the server process for the "messenger"
 %%% the user list has the format [{ClientPid1, Name1},{ClientPid22, Name2},...]
+server() ->
+    process_flag(trap_exit, true),
+    server([]).
+
 server(User_List) ->
     receive
         {From, logon, Name} ->
             New_User_List = server_logon(From, Name, User_List),
             server(New_User_List);
-        {From, logoff} ->
+        {'EXIT', From, _} ->
             New_User_List = server_logoff(From, User_List),
             server(New_User_List);
         {From, message_to, To, Message} ->
@@ -74,8 +76,7 @@ server(User_List) ->
 
 %%% Start the server
 start_server() ->
-    register(messenger, spawn(messenger, server, [[]])).
-
+    register(messenger, spawn(messenger, server, [])).
 
 %%% Server adds a new user to the user list
 server_logon(From, Name, User_List) ->
@@ -86,6 +87,7 @@ server_logon(From, Name, User_List) ->
             User_List;
         false ->
             From ! {messenger, logged_on},
+            link(From),
             [{From, Name} | User_List]        %add user to the list
     end.
 
@@ -100,9 +102,10 @@ server_transfer(From, To, Message, User_List) ->
     case lists:keysearch(From, 1, User_List) of
         false ->
             From ! {messenger, stop, you_are_not_logged_on};
-        {value, {From, Name}} ->
+        {value, {_, Name}} ->
             server_transfer(From, Name, To, Message, User_List)
     end.
+
 %%% If the user exists, send the message
 server_transfer(From, Name, To, Message, User_List) ->
     %% Find the receiver and send the message
@@ -113,7 +116,6 @@ server_transfer(From, Name, To, Message, User_List) ->
             ToPid ! {message_from, Name, Message}, 
             From ! {messenger, sent} 
     end.
-
 
 %%% User Commands
 logon(Name) ->
@@ -135,8 +137,7 @@ message(ToName, Message) ->
              ok
 end.
 
-
-%%% The client process which runs on each server node
+%%% The client process which runs on each user node
 client(Server_Node, Name) ->
     {messenger, Server_Node} ! {self(), logon, Name},
     await_result(),
@@ -145,7 +146,6 @@ client(Server_Node, Name) ->
 client(Server_Node) ->
     receive
         logoff ->
-            {messenger, Server_Node} ! {self(), logoff},
             exit(normal);
         {message_to, ToName, Message} ->
             {messenger, Server_Node} ! {self(), message_to, ToName, Message},
@@ -163,4 +163,7 @@ await_result() ->
             exit(normal);
         {messenger, What} ->  % Normal response
             io:format("~p~n", [What])
+    after 5000 ->
+            io:format("No response from server~n", []),
+            exit(timeout)
     end.
